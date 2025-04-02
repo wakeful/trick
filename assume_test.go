@@ -1,0 +1,187 @@
+// Copyright 2025 variHQ OÜ
+// SPDX-License-Identifier: BSD-3-Clause
+
+package main
+
+import (
+	"container/ring"
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/aws/aws-sdk-go-v2/service/sts/types"
+)
+
+func TestApp_assumeRole(t *testing.T) {
+	type fields struct {
+		client          MockSTSClient
+		region          string
+		sessionDuration time.Duration
+	}
+
+	type args struct {
+		ctx  context.Context
+		role string
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "we are allowed to assume role-a",
+			fields: fields{
+				client: MockSTSClient{
+					mockAssumeRoleOutput: map[string]sts.AssumeRoleOutput{
+						"arn:aws:iam::0987654321:role/role-a": {
+							Credentials: &types.Credentials{
+								AccessKeyId:     aws.String("access-key-id"),
+								SecretAccessKey: aws.String("secret-access-key"),
+								SessionToken:    aws.String("session-token"),
+							},
+						},
+					},
+					mockAssumeRoleError: nil,
+				},
+				region:          "eu-west-1",
+				sessionDuration: 42 * time.Second,
+			},
+			args: args{
+				ctx:  t.Context(),
+				role: "arn:aws:iam::0987654321:role/role-a",
+			},
+			wantErr: false,
+		},
+		{
+			name: "we should fail when trying to assume role-b",
+			fields: fields{
+				client: MockSTSClient{
+					mockAssumeRoleOutput: make(map[string]sts.AssumeRoleOutput),
+					mockAssumeRoleError:  errors.New("error"),
+				},
+				region:          "eu-west-1",
+				sessionDuration: 42 * time.Second,
+			},
+			args: args{
+				ctx:  t.Context(),
+				role: "arn:aws:iam::0987654321:role/role-b",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &App{
+				client:          tt.fields.client,
+				region:          tt.fields.region,
+				sessionDuration: tt.fields.sessionDuration,
+			}
+			if _, err := a.assumeRole(tt.args.ctx, tt.args.role); (err != nil) != tt.wantErr {
+				t.Errorf("assumeRole() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestApp_assumeNextInterestingRole(t *testing.T) {
+	roles, _ := setRolePool([]string{
+		"arn:aws:iam::0987654321:role/role-a",
+		"arn:aws:iam::0987654321:role/role-b",
+		"arn:aws:iam::0987654321:role/role-c",
+	})
+
+	credentials := &types.Credentials{
+		AccessKeyId:     aws.String("access-key-id"),
+		SecretAccessKey: aws.String("secret-access-key"),
+		SessionToken:    aws.String("session-token"),
+	}
+
+	type fields struct {
+		client          MockSTSClient
+		region          string
+		roles           *ring.Ring
+		usableRoles     map[string]struct{}
+		sessionDuration time.Duration
+	}
+
+	tests := []struct {
+		name    string
+		ctx     context.Context
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "we are allowed to assume role-a",
+			fields: fields{
+				client: MockSTSClient{
+					mockAssumeRoleOutput: map[string]sts.AssumeRoleOutput{
+						"arn:aws:iam::0987654321:role/role-a": {
+							Credentials: credentials,
+						},
+					},
+					mockAssumeRoleError: nil,
+				},
+				region:          "eu-west-1",
+				roles:           roles,
+				usableRoles:     make(map[string]struct{}),
+				sessionDuration: 42 * time.Second,
+			},
+			wantErr: false,
+		},
+		{
+			name: "we should fail when trying to assume role-b",
+			fields: fields{
+				client: MockSTSClient{
+					mockAssumeRoleOutput: make(map[string]sts.AssumeRoleOutput),
+					mockAssumeRoleError:  errors.New("error"),
+				},
+				region:          "eu-west-1",
+				roles:           roles,
+				usableRoles:     make(map[string]struct{}),
+				sessionDuration: 42 * time.Second,
+			},
+			wantErr: true,
+		},
+		{
+			name: "we are allowed to assume role-a and assume-role-b but only role-b is usable",
+			fields: fields{
+				client: MockSTSClient{
+					mockAssumeRoleOutput: map[string]sts.AssumeRoleOutput{
+						"arn:aws:iam::0987654321:role/role-a": {
+							Credentials: credentials,
+						},
+					},
+					mockAssumeRoleError: nil,
+				},
+				region: "eu-west-1",
+				roles:  roles,
+				usableRoles: map[string]struct{}{
+					"arn:aws:iam::0987654321:role/role-a": {},
+				},
+				sessionDuration: 42 * time.Second,
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &App{
+				client:          tt.fields.client,
+				region:          tt.fields.region,
+				roles:           tt.fields.roles,
+				usableRoles:     tt.fields.usableRoles,
+				sessionDuration: tt.fields.sessionDuration,
+			}
+			if _, err := a.assumeNextInterestingRole(tt.ctx); (err != nil) != tt.wantErr {
+				t.Errorf("assumeNextInterestingRole() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

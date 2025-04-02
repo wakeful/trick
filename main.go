@@ -1,0 +1,84 @@
+// Copyright 2025 variHQ OÜ
+// SPDX-License-Identifier: BSD-3-Clause
+
+package main
+
+import (
+	"context"
+	"flag"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+var version = "dev"
+
+func main() {
+	const defaultRefreshTime = 12
+
+	refresh := flag.Int64("refresh", defaultRefreshTime, "refresh IAM every n minutes")
+	region := flag.String("region", "eu-west-1", "AWS region used for IAM communication")
+	showVersion := flag.Bool("version", false, "show version")
+	verbose := flag.Bool("verbose", false, "verbose log output")
+
+	var (
+		roleVars    StringSlice
+		useRoleVars StringSlice
+	)
+
+	flag.Var(&roleVars, "role", "AWS role to assume (can be specified multiple times)")
+	flag.Var(&useRoleVars, "use", "AWS role with meaningful permissions (can be specified multiple times)")
+
+	flag.Parse()
+
+	logLevel := slog.LevelInfo
+	if *verbose {
+		logLevel = slog.LevelDebug
+	}
+
+	slog.SetDefault(slog.New(
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			AddSource: false,
+			Level:     logLevel,
+		}),
+	))
+
+	if *showVersion {
+		slog.Info("trick", slog.String("version", version))
+
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	signalCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+
+	slog.Info("starting app")
+
+	ticker := time.NewTicker(time.Minute * time.Duration(*refresh))
+	defer ticker.Stop()
+
+	go func() {
+		<-signalCtx.Done()
+		slog.Info("signal received, shutting down...")
+		cancel()
+	}()
+
+	app, err := NewApp(ctx, *region, roleVars, useRoleVars)
+	if err != nil {
+		slog.Error("failed to initialize app", slog.String("error", err.Error()))
+
+		return
+	}
+
+	app.run(ctx, ticker)
+
+	const duration = 100 * time.Millisecond
+
+	slog.Info("cleaning up resources...")
+	time.Sleep(duration)
+	slog.Info("application terminated gracefully")
+}

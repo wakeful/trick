@@ -1,0 +1,73 @@
+# trick
+
+> **Tactician of Role-Interchanging Cloud Keys** (Effortless AWS persistence via AssumeRole).
+
+
+> [!NOTE]
+> This tool helps maintain persistence in AWS by performing AssumeRole operations using a pool of AWS IAM roles (
+> implemented as a ring buffer).
+
+```shell
+$ trick -h
+Usage of trick
+  -refresh int
+        refresh IAM every n minutes (default 12)
+  -region string
+        AWS region used for IAM communication (default "eu-west-1")
+  -role value
+        AWS role to assume (can be specified multiple times)
+  -use value
+        AWS role with meaningful permissions (can be specified multiple times)
+  -verbose
+        verbose log output
+  -version
+        show version
+```
+
+> [!IMPORTANT]
+> The `trick-jump-credentials` profile will be updated with new credentials.
+
+> [!WARNING]
+> The AWS CLI is required to properly write the new credentials.
+
+### Simple scenario.
+
+```shell
+trick -role arn::42::role-a -role arn::42::role-b -role arn::42::role-c
+```
+
+```mermaid
+stateDiagram
+    rA: role A
+    rB: role B
+    rC: role C
+    [*] --> rA
+    rA --> rB: wait 12min and jump
+    rB --> rC: wait 12min and jump
+    rC --> rA: wait 12min and jump
+```
+
+## Complex scenario.
+
+> [!TIP]
+> Sometimes only a few roles in the chain have useful permissions. Instead of waiting for the next jump, we can just
+> pick the roles that matter to us.
+
+```shell
+trick -role arn::42::role-a -role arn::42::role-b \
+      -role arn::42::role-c -role arn::42::role-d \
+      -use arn::42::role-a -use arn::42::role-d
+```
+
+```mermaid
+stateDiagram
+    rA: role A
+    rB: role B
+    rC: role C
+    rD: role D
+    [*] --> rA
+    rA --> rB: wait 12min and jump
+    rB --> rC: B lacks permission so we jump to C
+    rC --> rD: C lacks permission so we jump to D
+    rD --> rA: wait 12min and jump
+```
