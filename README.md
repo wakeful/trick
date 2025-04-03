@@ -24,6 +24,21 @@ Usage of trick
         show version
 ```
 
+### Installation.
+
+#### From source.
+
+```shell
+# via the Go toolchain
+go install github.com/wakeful/trick
+```
+
+#### Using a binary release.
+
+You can download a pre-built binary from the [release page](https://github.com/wakeful/trick/releases/latest) and add it
+to your user PATH.
+
+
 > [!IMPORTANT]
 > The `trick-jump-credentials` profile will be updated with new credentials.
 
@@ -47,7 +62,7 @@ stateDiagram
     rC --> rA: wait 12min and jump
 ```
 
-## Complex scenario.
+### Complex scenario.
 
 > [!TIP]
 > Sometimes only a few roles in the chain have useful permissions. Instead of waiting for the next jump, we can just
