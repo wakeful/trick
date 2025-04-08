@@ -112,7 +112,6 @@ func TestApp_assumeNextInterestingRole(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		ctx     context.Context
 		fields  fields
 		wantErr bool
 	}{
@@ -149,7 +148,7 @@ func TestApp_assumeNextInterestingRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "we are allowed to assume role-a and assume-role-b but only role-b is usable",
+			name: "role-a is in the usableRoles map and can be assumed successfully",
 			fields: fields{
 				client: MockSTSClient{
 					mockAssumeRoleOutput: map[string]sts.AssumeRoleOutput{
@@ -179,7 +178,7 @@ func TestApp_assumeNextInterestingRole(t *testing.T) {
 				usableRoles:     tt.fields.usableRoles,
 				sessionDuration: tt.fields.sessionDuration,
 			}
-			if _, err := a.assumeNextInterestingRole(tt.ctx); (err != nil) != tt.wantErr {
+			if _, err := a.assumeNextInterestingRole(t.Context()); (err != nil) != tt.wantErr {
 				t.Errorf("assumeNextInterestingRole() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

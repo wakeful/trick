@@ -12,6 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
+// getID retrieves the AWS identity ARN of the caller using STS.
+// It returns the ARN as a string or an error if the identity cannot be retrieved.
 func (a *App) getID(ctx context.Context) (string, error) {
 	identity, err := a.client.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
@@ -21,8 +23,14 @@ func (a *App) getID(ctx context.Context) (string, error) {
 	return *identity.Arn, nil
 }
 
+// nextRole advances to the next role in the role pool and returns it.
+// If the current value in the role pool is not a string, it returns an empty string.
 func (a *App) nextRole() string {
-	value := fmt.Sprintf("%s", a.roles.Value)
+	value, ok := a.roles.Value.(string)
+	if !ok {
+		return ""
+	}
+
 	a.roles = a.roles.Next()
 
 	slog.Debug("next role", slog.String("role", value))
@@ -30,6 +38,9 @@ func (a *App) nextRole() string {
 	return value
 }
 
+// setRolePool initializes a circular role pool with the provided roles.
+// It requires at least two roles to work properly and returns an error otherwise.
+// Returns the initialized role pool and nil error on success.
 func setRolePool(roles []string) (*ring.Ring, error) {
 	const minRoles = 2
 	if len(roles) < minRoles {

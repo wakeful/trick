@@ -9,21 +9,23 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
-var ErrMinRoles = errors.New("at least two roles are required")
+var (
+	ErrMinRoles                = errors.New("at least two roles are required")
+	ErrInvalidCredentials      = errors.New("invalid credentials: one or more required fields are nil")
+	ErrUsableRoleNotInRoleList = errors.New("usable role is missing from roles list")
+)
 
 type ServiceSTS interface {
-	AssumeRole(
-		ctx context.Context,
-		params *sts.AssumeRoleInput,
-		optFns ...func(*sts.Options),
-	) (*sts.AssumeRoleOutput, error)
+	stscreds.AssumeRoleAPIClient
 	GetCallerIdentity(
 		ctx context.Context,
 		params *sts.GetCallerIdentityInput,
@@ -32,10 +34,15 @@ type ServiceSTS interface {
 }
 
 type App struct {
-	client          ServiceSTS
-	region          string
-	roles           *ring.Ring
-	usableRoles     map[string]struct{}
+	// client is the AWS STS service client used for role assumptions
+	client ServiceSTS
+	// region is the AWS region used for IAM operations
+	region string
+	// roles is a ring buffer containing all roles that can be assumed
+	roles *ring.Ring
+	// usableRoles is a set of roles with meaningful permissions
+	usableRoles map[string]struct{}
+	// sessionDuration is the duration for which assumed role credentials are valid
 	sessionDuration time.Duration
 }
 
@@ -49,14 +56,27 @@ func NewApp(ctx context.Context, region string, roles []string, usableRoles []st
 
 	rolesPool, err := setRolePool(roles)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to set role pool: %w", err)
+	}
+
+	hPool := make(map[string]struct{})
+	for _, role := range roles {
+		hPool[role] = struct{}{}
 	}
 
 	hMap := make(map[string]struct{})
+
 	for _, role := range usableRoles {
+		if _, ok := hPool[role]; !ok {
+			slog.Error("usable role is missing from roles list", slog.String("role", role))
+
+			return nil, ErrUsableRoleNotInRoleList
+		}
+
 		hMap[role] = struct{}{}
 	}
 
+	// maxSessionDuration defines the duration in minutes for which assumed role credentials are valid
 	const maxSessionDuration = 15
 
 	return &App{

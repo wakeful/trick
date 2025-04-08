@@ -28,8 +28,8 @@ func main() {
 		useRoleVars StringSlice
 	)
 
-	flag.Var(&roleVars, "role", "AWS role to assume (can be specified multiple times)")
-	flag.Var(&useRoleVars, "use", "AWS role with meaningful permissions (can be specified multiple times)")
+	flag.Var(&roleVars, "role", "AWS role ARN to assume (can be specified multiple times, at least 2 required)")
+	flag.Var(&useRoleVars, "use", "AWS role ARN with meaningful permissions to prioritize (must exist in -role list)")
 
 	flag.Parse()
 
@@ -59,6 +59,14 @@ func main() {
 	slog.Info("starting app")
 
 	ticker := time.NewTicker(time.Minute * time.Duration(*refresh))
+
+	if *refresh < 1 {
+		slog.Warn("refresh interval too low, setting to 1 minute")
+
+		*refresh = 1
+		ticker = time.NewTicker(time.Minute)
+	}
+
 	defer ticker.Stop()
 
 	go func() {
@@ -76,9 +84,11 @@ func main() {
 
 	app.run(ctx, ticker)
 
-	const duration = 100 * time.Millisecond
+	// cleanupWaitDuration provides a short delay before termination to ensure
+	// logs and resources are properly flushed and cleaned up
+	const cleanupWaitDuration = 100 * time.Millisecond
 
 	slog.Info("cleaning up resources...")
-	time.Sleep(duration)
+	time.Sleep(cleanupWaitDuration)
 	slog.Info("application terminated gracefully")
 }

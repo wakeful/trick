@@ -2,7 +2,6 @@
 
 > **Tactician of Role-Interchanging Cloud Keys** (Effortless AWS persistence via AssumeRole).
 
-
 > [!NOTE]
 > This tool helps maintain persistence in AWS by performing AssumeRole operations using a pool of AWS IAM roles (
 > implemented as a ring buffer).
@@ -24,16 +23,16 @@ Usage of trick
         show version
 ```
 
-### Installation.
+### Installation
 
-#### From source.
+#### From source
 
 ```shell
 # via the Go toolchain
 go install github.com/wakeful/trick
 ```
 
-#### Using a binary release.
+#### Using a binary release
 
 You can download a pre-built binary from the [release page](https://github.com/wakeful/trick/releases/latest) and add it
 to your user PATH.
@@ -43,9 +42,9 @@ to your user PATH.
 > The `trick-jump-credentials` profile will be updated with new credentials.
 
 > [!WARNING]
-> The AWS CLI is required to properly write the new credentials.
+> The AWS CLI is required to write the new credentials properly.
 
-### Simple scenario.
+### Simple scenario
 
 ```shell
 trick -role arn::42::role-a -role arn::42::role-b -role arn::42::role-c
@@ -62,7 +61,7 @@ stateDiagram
     rC --> rA: wait 12min and jump
 ```
 
-### Complex scenario.
+### Complex scenario
 
 > [!TIP]
 > Sometimes only a few roles in the chain have useful permissions. Instead of waiting for the next jump, we can just
@@ -71,7 +70,7 @@ stateDiagram
 ```shell
 trick -role arn::42::role-a -role arn::42::role-b \
       -role arn::42::role-c -role arn::42::role-d \
-      -use arn::42::role-a -use arn::42::role-d
+      -use  arn::42::role-a -use  arn::42::role-d
 ```
 
 ```mermaid

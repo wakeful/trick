@@ -54,6 +54,11 @@ func (a *App) tick(ctx context.Context) error {
 }
 
 func writeAWSProfile(credentials *types.Credentials, region string) error {
+	if credentials == nil || credentials.AccessKeyId == nil ||
+		credentials.SecretAccessKey == nil || credentials.SessionToken == nil {
+		return ErrInvalidCredentials
+	}
+
 	const profileName = "trick-jump-credentials"
 	commands := []struct {
 		args []string
@@ -69,7 +74,7 @@ func writeAWSProfile(credentials *types.Credentials, region string) error {
 		},
 		{
 			args: []string{"configure", "set", "aws_session_token", *credentials.SessionToken, "--profile", profileName},
-			desc: "setting secret key",
+			desc: "setting secret token",
 		},
 		{
 			args: []string{"configure", "set", "region", region, "--profile", profileName},
