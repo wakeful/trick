@@ -16,7 +16,13 @@ repos:
     hooks:
       - id: addlicense
         name: Add License
-        entry: addlicense -c 'variHQ OÜ' -l 'BSD-3-Clause' -s=only
+        entry: go tool -modfile=tools/go.mod addlicense -c 'variHQ OÜ' -l 'BSD-3-Clause' -s=only
         language: system
         types: [ file ]
         exclude: '\.(hcl|yaml|yml)$'
+      - id: golangci-lint
+        name: golangci-lint
+        entry: go tool -modfile=tools/go.mod golangci-lint run
+        language: system
+        types: [go]
+        pass_filenames: false
