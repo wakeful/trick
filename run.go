@@ -52,6 +52,7 @@ func (a *App) tick(ctx context.Context) error {
 	return nil
 }
 
+//nolint:funlen
 func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region string) error {
 	if credentials == nil || credentials.AccessKeyId == nil ||
 		credentials.SecretAccessKey == nil || credentials.SessionToken == nil {
@@ -63,7 +64,14 @@ func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region s
 		desc string
 	}{
 		{
-			args: []string{"configure", "set", "aws_access_key_id", *credentials.AccessKeyId, "--profile", p.profileName},
+			args: []string{
+				"configure",
+				"set",
+				"aws_access_key_id",
+				*credentials.AccessKeyId,
+				"--profile",
+				p.profileName,
+			},
 			desc: "setting access key",
 		},
 		{
@@ -78,7 +86,14 @@ func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region s
 			desc: "setting secret key",
 		},
 		{
-			args: []string{"configure", "set", "aws_session_token", *credentials.SessionToken, "--profile", p.profileName},
+			args: []string{
+				"configure",
+				"set",
+				"aws_session_token",
+				*credentials.SessionToken,
+				"--profile",
+				p.profileName,
+			},
 			desc: "setting secret token",
 		},
 		{
@@ -92,7 +107,11 @@ func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region s
 		if err != nil {
 			slog.Error(cmd.desc, slog.String("error", err.Error()))
 
-			return fmt.Errorf("failed to execute aws command %q: %w", strings.Join(cmd.args, " "), err)
+			return fmt.Errorf(
+				"failed to execute aws command %q: %w",
+				strings.Join(cmd.args, " "),
+				err,
+			)
 		}
 	}
 

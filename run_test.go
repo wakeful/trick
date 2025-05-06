@@ -90,7 +90,9 @@ func TestProfileWriter_writeAWSProfile(t *testing.T) {
 func TestApp_run(t *testing.T) {
 	t.Parallel()
 
-	pool, err := setRolePool([]string{"arn:aws:iam::0987654321:role/role-a", "arn:aws:iam::0987654321:role/role-b"})
+	pool, err := setRolePool(
+		[]string{"arn:aws:iam::0987654321:role/role-a", "arn:aws:iam::0987654321:role/role-b"},
+	)
 	if err != nil {
 		t.Fatalf("setRolePool failed: %v", err)
 	}

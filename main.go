@@ -1,6 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
+// Package main provides functionality for assuming AWS roles and managing credentials.
 package main
 
 import (
@@ -22,6 +23,7 @@ const (
 
 var version = "dev"
 
+//nolint:funlen
 func main() {
 	refresh := flag.Int64("refresh", defaultRefreshTime, "refresh IAM every n minutes")
 	region := flag.String("region", "eu-west-1", "AWS region used for IAM communication")
@@ -33,8 +35,16 @@ func main() {
 		useRoleVars StringSlice
 	)
 
-	flag.Var(&roleVars, "role", "AWS role ARN to assume (can be specified multiple times, at least 2 required)")
-	flag.Var(&useRoleVars, "use", "AWS role ARN with meaningful permissions to prioritize (must exist in -role list)")
+	flag.Var(
+		&roleVars,
+		"role",
+		"AWS role ARN to assume (can be specified multiple times, at least 2 required)",
+	)
+	flag.Var(
+		&useRoleVars,
+		"use",
+		"AWS role ARN with meaningful permissions to prioritize (must exist in -role list)",
+	)
 
 	flag.Parse()
 
