@@ -7,6 +7,7 @@ import (
 	"container/ring"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/service/sts"
@@ -54,4 +55,22 @@ func setRolePool(roles []string) (*ring.Ring, error) {
 	}
 
 	return rolesPool, nil
+}
+
+// getLogger creates and returns a slog.Logger configured with the specified output and log level.
+// The verbosity is set to debug if verbose is true; otherwise, it defaults to info level.
+func getLogger(output io.Writer, verbose *bool) *slog.Logger {
+	logLevel := slog.LevelInfo
+	if verbose != nil && *verbose {
+		logLevel = slog.LevelDebug
+	}
+
+	logger := slog.New(
+		slog.NewTextHandler(output, &slog.HandlerOptions{ //nolint:exhaustruct
+			AddSource: false,
+			Level:     logLevel,
+		}),
+	)
+
+	return logger
 }

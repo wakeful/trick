@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -36,6 +37,8 @@ type ServiceSTS interface {
 type App struct {
 	// client is the AWS STS service client used for role assumptions
 	client ServiceSTS
+	// profileWriter manages the execution of AWS profile updates
+	profileWriter *ProfileWriter
 	// region is the AWS region used for IAM operations
 	region string
 	// roles is a ring buffer containing all roles that can be assumed
@@ -81,6 +84,7 @@ func NewApp(ctx context.Context, region string, roles []string, usableRoles []st
 
 	return &App{
 		client:          sts.NewFromConfig(cfg),
+		profileWriter:   NewProfileWriter(nil),
 		region:          region,
 		roles:           rolesPool,
 		usableRoles:     hMap,
@@ -101,3 +105,31 @@ func (s *StringSlice) Set(value string) error {
 }
 
 var _ flag.Value = (*StringSlice)(nil)
+
+type CmdExecutor interface {
+	Execute(name string, arg ...string) ([]byte, error)
+}
+
+type DefaultCmdExecutor struct{}
+
+var _ CmdExecutor = (*DefaultCmdExecutor)(nil)
+
+func (e *DefaultCmdExecutor) Execute(name string, arg ...string) ([]byte, error) {
+	return exec.Command(name, arg...).CombinedOutput() //nolint:wrapcheck
+}
+
+type ProfileWriter struct {
+	cmdExecutor CmdExecutor
+	profileName string
+}
+
+func NewProfileWriter(cmdExecutor CmdExecutor) *ProfileWriter {
+	if cmdExecutor == nil {
+		cmdExecutor = &DefaultCmdExecutor{}
+	}
+
+	return &ProfileWriter{
+		cmdExecutor: cmdExecutor,
+		profileName: defaultProfileName,
+	}
+}

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -46,44 +45,50 @@ func (a *App) tick(ctx context.Context) error {
 		return fmt.Errorf("unable to assume role on tick: %w", err)
 	}
 
-	if errWrite := writeAWSProfile(credentials, a.region); errWrite != nil {
+	if errWrite := a.profileWriter.writeAWSProfile(credentials, a.region); errWrite != nil {
 		return fmt.Errorf("unable to write AWS credentials: %w", errWrite)
 	}
 
 	return nil
 }
 
-func writeAWSProfile(credentials *types.Credentials, region string) error {
+func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region string) error {
 	if credentials == nil || credentials.AccessKeyId == nil ||
 		credentials.SecretAccessKey == nil || credentials.SessionToken == nil {
 		return ErrInvalidCredentials
 	}
 
-	const profileName = "trick-jump-credentials"
 	commands := []struct {
 		args []string
 		desc string
 	}{
 		{
-			args: []string{"configure", "set", "aws_access_key_id", *credentials.AccessKeyId, "--profile", profileName},
+			args: []string{"configure", "set", "aws_access_key_id", *credentials.AccessKeyId, "--profile", p.profileName},
 			desc: "setting access key",
 		},
 		{
-			args: []string{"configure", "set", "aws_secret_access_key", *credentials.SecretAccessKey, "--profile", profileName},
+			args: []string{
+				"configure",
+				"set",
+				"aws_secret_access_key",
+				*credentials.SecretAccessKey,
+				"--profile",
+				p.profileName,
+			},
 			desc: "setting secret key",
 		},
 		{
-			args: []string{"configure", "set", "aws_session_token", *credentials.SessionToken, "--profile", profileName},
+			args: []string{"configure", "set", "aws_session_token", *credentials.SessionToken, "--profile", p.profileName},
 			desc: "setting secret token",
 		},
 		{
-			args: []string{"configure", "set", "region", region, "--profile", profileName},
+			args: []string{"configure", "set", "region", region, "--profile", p.profileName},
 			desc: "setting region",
 		},
 	}
 
 	for _, cmd := range commands {
-		_, err := exec.Command("aws", cmd.args...).CombinedOutput()
+		_, err := p.cmdExecutor.Execute("aws", cmd.args...)
 		if err != nil {
 			slog.Error(cmd.desc, slog.String("error", err.Error()))
 
@@ -91,7 +96,7 @@ func writeAWSProfile(credentials *types.Credentials, region string) error {
 		}
 	}
 
-	slog.Debug("aws credentials updated", slog.String("profile", profileName))
+	slog.Debug("aws credentials updated", slog.String("profile", p.profileName))
 
 	return nil
 }

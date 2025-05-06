@@ -5,7 +5,6 @@ package main
 
 import (
 	"container/ring"
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -16,21 +15,18 @@ import (
 )
 
 func TestApp_assumeRole(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		client          MockSTSClient
 		region          string
 		sessionDuration time.Duration
 	}
 
-	type args struct {
-		ctx  context.Context
-		role string
-	}
-
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
+		role    string
 		wantErr bool
 	}{
 		{
@@ -51,10 +47,7 @@ func TestApp_assumeRole(t *testing.T) {
 				region:          "eu-west-1",
 				sessionDuration: 42 * time.Second,
 			},
-			args: args{
-				ctx:  t.Context(),
-				role: "arn:aws:iam::0987654321:role/role-a",
-			},
+			role:    "arn:aws:iam::0987654321:role/role-a",
 			wantErr: false,
 		},
 		{
@@ -67,22 +60,21 @@ func TestApp_assumeRole(t *testing.T) {
 				region:          "eu-west-1",
 				sessionDuration: 42 * time.Second,
 			},
-			args: args{
-				ctx:  t.Context(),
-				role: "arn:aws:iam::0987654321:role/role-b",
-			},
+			role:    "arn:aws:iam::0987654321:role/role-b",
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			a := &App{
 				client:          tt.fields.client,
 				region:          tt.fields.region,
 				sessionDuration: tt.fields.sessionDuration,
 			}
-			if _, err := a.assumeRole(tt.args.ctx, tt.args.role); (err != nil) != tt.wantErr {
+			if _, err := a.assumeRole(t.Context(), tt.role); (err != nil) != tt.wantErr {
 				t.Errorf("assumeRole() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -90,6 +82,8 @@ func TestApp_assumeRole(t *testing.T) {
 }
 
 func TestApp_assumeNextInterestingRole(t *testing.T) {
+	t.Parallel()
+
 	roles, _ := setRolePool([]string{
 		"arn:aws:iam::0987654321:role/role-a",
 		"arn:aws:iam::0987654321:role/role-b",
@@ -171,6 +165,8 @@ func TestApp_assumeNextInterestingRole(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			a := &App{
 				client:          tt.fields.client,
 				region:          tt.fields.region,

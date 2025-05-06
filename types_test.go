@@ -42,6 +42,8 @@ func (m MockSTSClient) GetCallerIdentity(
 var _ ServiceSTS = (*MockSTSClient)(nil)
 
 func TestNewApp(t *testing.T) {
+	t.Parallel()
+
 	pool, err := setRolePool([]string{"role-a", "role-b"})
 	if err != nil {
 		t.Fatalf("setRolePool failed: %v", err)
@@ -98,6 +100,8 @@ func TestNewApp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := NewApp(t.Context(), tt.args.region, tt.args.roles, tt.args.usableRoles)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewApp() error = %v, wantErr %v", err, tt.wantErr)

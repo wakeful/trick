@@ -1,10 +1,6 @@
 version: "2"
 linters:
   default: all
-  disable:
-    - exhaustruct
-    - funlen
-    - gosec
   settings:
     depguard:
       rules:
@@ -24,12 +20,9 @@ linters:
       - std-error-handling
     rules:
       - linters:
-          - containedctx
           - err113
           - exhaustruct
           - funlen
-          - paralleltest
-          - testpackage
           - varnamelen
         path: _test.go
     paths:

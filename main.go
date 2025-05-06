@@ -13,11 +13,16 @@ import (
 	"time"
 )
 
+const (
+	// cleanupWaitDuration provides a short delay before termination to ensure proper cleaned up.
+	cleanupWaitDuration = 100 * time.Millisecond
+	defaultProfileName  = "trick-jump-credentials"
+	defaultRefreshTime  = 12
+)
+
 var version = "dev"
 
 func main() {
-	const defaultRefreshTime = 12
-
 	refresh := flag.Int64("refresh", defaultRefreshTime, "refresh IAM every n minutes")
 	region := flag.String("region", "eu-west-1", "AWS region used for IAM communication")
 	showVersion := flag.Bool("version", false, "show version")
@@ -33,17 +38,7 @@ func main() {
 
 	flag.Parse()
 
-	logLevel := slog.LevelInfo
-	if *verbose {
-		logLevel = slog.LevelDebug
-	}
-
-	slog.SetDefault(slog.New(
-		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			AddSource: false,
-			Level:     logLevel,
-		}),
-	))
+	slog.SetDefault(getLogger(os.Stderr, verbose))
 
 	if *showVersion {
 		slog.Info("trick", slog.String("version", version))
@@ -83,10 +78,6 @@ func main() {
 	}
 
 	app.run(ctx, ticker)
-
-	// cleanupWaitDuration provides a short delay before termination to ensure
-	// logs and resources are properly flushed and cleaned up
-	const cleanupWaitDuration = 100 * time.Millisecond
 
 	slog.Info("cleaning up resources...")
 	time.Sleep(cleanupWaitDuration)

@@ -18,7 +18,7 @@ import (
 func (a *App) assumeRole(ctx context.Context, role string) (*types.Credentials, error) {
 	slog.Debug("assuming role", slog.String("role", role))
 
-	assumeRole, err := a.client.AssumeRole(ctx, &sts.AssumeRoleInput{
+	assumeRole, err := a.client.AssumeRole(ctx, &sts.AssumeRoleInput{ //nolint:exhaustruct
 		RoleArn:         aws.String(role),
 		RoleSessionName: aws.String("trick"),
 		DurationSeconds: aws.Int32(int32(a.sessionDuration.Seconds())),
