@@ -125,7 +125,7 @@ var _ flag.Value = (*StringSlice)(nil)
 
 // CmdExecutor is an interface for executing system commands and returning their output or any errors encountered.
 type CmdExecutor interface {
-	Execute(name string, arg ...string) ([]byte, error)
+	Execute(ctx context.Context, name string, arg ...string) ([]byte, error)
 }
 
 // DefaultCmdExecutor is a concrete implementation of the CmdExecutor interface using the exec.Command for execution.
@@ -134,8 +134,14 @@ type DefaultCmdExecutor struct{}
 var _ CmdExecutor = (*DefaultCmdExecutor)(nil)
 
 // Execute runs the specified command with given arguments and returns its combined standard output and error.
-func (e *DefaultCmdExecutor) Execute(name string, arg ...string) ([]byte, error) {
-	return exec.Command(name, arg...).CombinedOutput() //nolint:wrapcheck
+func (e *DefaultCmdExecutor) Execute(
+	ctx context.Context,
+	name string,
+	arg ...string,
+) ([]byte, error) {
+	//nolint:wrapcheck
+	return exec.CommandContext(ctx, name, arg...).
+		CombinedOutput()
 }
 
 // ProfileWriter is responsible for managing the execution of AWS profile updates using a command executor.

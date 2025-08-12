@@ -74,7 +74,9 @@ func TestApp_assumeRole(t *testing.T) {
 				region:          tt.fields.region,
 				sessionDuration: tt.fields.sessionDuration,
 			}
-			if _, err := a.assumeRole(t.Context(), tt.role); (err != nil) != tt.wantErr {
+
+			_, err := a.assumeRole(t.Context(), tt.role)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("assumeRole() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -174,7 +176,9 @@ func TestApp_assumeNextInterestingRole(t *testing.T) {
 				usableRoles:     tt.fields.usableRoles,
 				sessionDuration: tt.fields.sessionDuration,
 			}
-			if _, err := a.assumeNextInterestingRole(t.Context()); (err != nil) != tt.wantErr {
+
+			_, err := a.assumeNextInterestingRole(t.Context())
+			if (err != nil) != tt.wantErr {
 				t.Errorf("assumeNextInterestingRole() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -14,7 +14,8 @@ import (
 )
 
 func (a *App) run(ctx context.Context, ticker *time.Ticker) {
-	if err := a.tick(ctx); err != nil {
+	err := a.tick(ctx)
+	if err != nil {
 		slog.Error("initial tick failed", slog.String("error", err.Error()))
 
 		return
@@ -23,7 +24,8 @@ func (a *App) run(ctx context.Context, ticker *time.Ticker) {
 	for {
 		select {
 		case <-ticker.C:
-			if err := a.tick(ctx); err != nil {
+			err := a.tick(ctx)
+			if err != nil {
 				slog.Error("tick failed", slog.String("error", err.Error()))
 
 				return
@@ -45,15 +47,21 @@ func (a *App) tick(ctx context.Context) error {
 		return fmt.Errorf("unable to assume role on tick: %w", err)
 	}
 
-	if errWrite := a.profileWriter.writeAWSProfile(credentials, a.region); errWrite != nil {
+	errWrite := a.profileWriter.writeAWSProfile(ctx, credentials, a.region)
+	if errWrite != nil {
 		return fmt.Errorf("unable to write AWS credentials: %w", errWrite)
 	}
 
 	return nil
 }
 
+//
 //nolint:funlen
-func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region string) error {
+func (p *ProfileWriter) writeAWSProfile(
+	ctx context.Context,
+	credentials *types.Credentials,
+	region string,
+) error {
 	if credentials == nil || credentials.AccessKeyId == nil ||
 		credentials.SecretAccessKey == nil || credentials.SessionToken == nil {
 		return ErrInvalidCredentials
@@ -103,7 +111,7 @@ func (p *ProfileWriter) writeAWSProfile(credentials *types.Credentials, region s
 	}
 
 	for _, cmd := range commands {
-		_, err := p.cmdExecutor.Execute("aws", cmd.args...)
+		_, err := p.cmdExecutor.Execute(ctx, "aws", cmd.args...)
 		if err != nil {
 			slog.Error(cmd.desc, slog.String("error", err.Error()))
 

@@ -1,6 +1,8 @@
 version: "2"
 linters:
   default: all
+  disable:
+    - wsl # deprecated (since v2.2.0)
   settings:
     depguard:
       rules:

@@ -18,7 +18,7 @@ type MockCmdExecutor struct {
 	executeFunc func(command string, args ...string) ([]byte, error)
 }
 
-func (m MockCmdExecutor) Execute(name string, arg ...string) ([]byte, error) {
+func (m MockCmdExecutor) Execute(_ context.Context, name string, arg ...string) ([]byte, error) {
 	return m.executeFunc(name, arg...)
 }
 
@@ -80,7 +80,9 @@ func TestProfileWriter_writeAWSProfile(t *testing.T) {
 				},
 				profileName: tt.profileName,
 			}
-			if err := p.writeAWSProfile(tt.credentials, tt.region); (err != nil) != tt.wantErr {
+
+			err := p.writeAWSProfile(t.Context(), tt.credentials, tt.region)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("writeAWSProfile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
