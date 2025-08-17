@@ -51,7 +51,11 @@ func main() {
 	slog.SetDefault(getLogger(os.Stderr, verbose))
 
 	if *showVersion {
-		slog.Info("trick", slog.String("version", version))
+		slog.Info(
+			"trick",
+			slog.String("repo", "https://github.com/wakeful/trick"),
+			slog.String("version", version),
+		)
 
 		return
 	}

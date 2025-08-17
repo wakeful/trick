@@ -3,8 +3,8 @@
 > **Tactician of Role-Interchanging Cloud Keys** (Effortless AWS persistence via AssumeRole).
 
 > [!NOTE]
-> This tool helps maintain persistence in AWS by performing AssumeRole operations using a pool of AWS IAM roles (
-> implemented as a ring buffer).
+> This tool keeps persistence in AWS. It does this by using a pool of AWS IAM roles for AssumeRole operations, set up
+> like a ring buffer.
 
 ```shell
 $ trick -h
@@ -42,7 +42,7 @@ to your user PATH.
 > The `trick-jump-credentials` profile will be updated with new credentials.
 
 > [!WARNING]
-> The AWS CLI is required to write the new credentials properly.
+> The new credentials need the AWS CLI to be written correctly.
 
 ### Simple scenario
 
@@ -64,8 +64,8 @@ stateDiagram
 ### Complex scenario
 
 > [!TIP]
-> Sometimes only a few roles in the chain have useful permissions. Instead of waiting for the next jump, we can just
-> pick the roles that matter to us.
+> Sometimes only a few roles in the chain have useful permissions. Instead of waiting for the next jump, we can pick the
+> roles that matter to us.
 
 ```shell
 trick -role arn::42::role-a -role arn::42::role-b \

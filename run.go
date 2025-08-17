@@ -55,7 +55,6 @@ func (a *App) tick(ctx context.Context) error {
 	return nil
 }
 
-//
 //nolint:funlen
 func (p *ProfileWriter) writeAWSProfile(
 	ctx context.Context,
