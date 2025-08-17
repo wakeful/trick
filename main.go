@@ -12,6 +12,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/wakeful/trick/internal/parser"
 )
 
 const (
@@ -25,6 +27,7 @@ var version = "dev"
 
 //nolint:funlen
 func main() {
+	config := flag.String("config", "", "path to config file")
 	refresh := flag.Int64("refresh", defaultRefreshTime, "refresh IAM every n minutes")
 	region := flag.String("region", "eu-west-1", "AWS region used for IAM communication")
 	showVersion := flag.Bool("version", false, "show version")
@@ -58,6 +61,24 @@ func main() {
 		)
 
 		return
+	}
+
+	if *config != "" {
+		slog.Debug("loading config file", slog.String("path", *config))
+
+		cfgFile, err := parser.ParseFile(*config)
+		if err != nil {
+			slog.Error("failed to parse config file", slog.String("error", err.Error()))
+
+			return
+		}
+
+		*refresh, roleVars, useRoleVars, err = cfgFile.ToFlags()
+		if err != nil {
+			slog.Error("failed to convert config to flags", slog.String("error", err.Error()))
+
+			return
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

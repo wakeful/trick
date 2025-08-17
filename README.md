@@ -9,6 +9,8 @@
 ```shell
 $ trick -h
 Usage of trick
+  -config string
+        path to config file
   -refresh int
         refresh IAM every n minutes (default 12)
   -region string
@@ -50,6 +52,37 @@ to your user PATH.
 trick -role arn::42::role-a -role arn::42::role-b -role arn::42::role-c
 ```
 
+<details>
+<summary>config file version</summary>
+
+```shell
+trick -config path/to/config.hcl
+```
+
+```hcl
+select_profile = profile.simple
+
+# -region eu-west-1 \
+# -role arn::42::role-a -role arn::42::role-b -role arn::42::role-c
+profile "simple" {
+  chain {
+    use {
+      arn = "arn::42::role-a"
+    }
+
+    use {
+      arn = "arn::42::role-b"
+    }
+
+    use {
+      arn = "arn::42::role-c"
+    }
+  }
+}
+```
+
+</details>
+
 ```mermaid
 stateDiagram
     rA: role A
@@ -68,10 +101,53 @@ stateDiagram
 > roles that matter to us.
 
 ```shell
-trick -role arn::42::role-a -role arn::42::role-b \
+trick -region eu-west-1 -refresh 12 \
+      -role arn::42::role-a -role arn::42::role-b \
       -role arn::42::role-c -role arn::42::role-d \
       -use  arn::42::role-a -use  arn::42::role-d
 ```
+
+<details>
+<summary>config file version</summary>
+
+```shell
+trick -config path/to/config.hcl
+```
+
+```hcl
+# -region eu-west-1 -refresh 12 \
+# -role arn::42::role-a -role arn::42::role-b \
+# -role arn::42::role-c -role arn::42::role-d \
+# -use  arn::42::role-a -use  arn::42::role-d
+profile "complex" {
+  region = "eu-west-1"
+
+  chain {
+    ttl = 12
+
+    use {
+      arn  = "arn::42::role-a"
+      skip = false # Defaults to false; you can skip it.
+    }
+
+    use {
+      arn  = "arn::42::role-b"
+      skip = true
+    }
+
+    use {
+      arn  = "arn::42::role-c"
+      skip = true
+    }
+
+    use {
+      arn = "arn::42::role-d"
+    }
+  }
+}
+```
+
+</details>
 
 ```mermaid
 stateDiagram
