@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/aws-sdk-go-v2/service/sts/types"
+	"github.com/wakeful/trick/internal/broadcast"
 )
 
 func (a *App) assumeRole(ctx context.Context, role string) (*types.Credentials, error) {
@@ -57,6 +58,11 @@ func (a *App) assumeNextInterestingRole(ctx context.Context) (*types.Credentials
 		if err != nil {
 			return nil, fmt.Errorf("unable to assume role, %w", err)
 		}
+
+		a.broadcaster.Publish(broadcast.Message{
+			Chain: "main",
+			Role:  role,
+		})
 
 		outputCred = cred
 

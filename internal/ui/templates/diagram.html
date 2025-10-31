@@ -1,0 +1,163 @@
+<!doctype html>
+<!--
+ Copyright 2025 variHQ OÜ
+ SPDX-License-Identifier: BSD-3-Clause
+-->
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>trick - active role visualization</title>
+        <script src="/static/mermaid.js"></script>
+        <style>
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+                color: #333;
+                margin-top: 0;
+            }
+            .info {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 4px;
+                margin-bottom: 20px;
+                border-left: 4px solid #007bff;
+            }
+            .mermaid {
+                text-align: center;
+                margin: 20px 0;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    filter: brightness(1);
+                }
+                50% {
+                    filter: brightness(1.3);
+                }
+            }
+            .mermaid svg .node.active-role rect,
+            .mermaid svg .node.active-role polygon,
+            .mermaid svg .node.active-role circle,
+            .mermaid svg .node.active-role ellipse {
+                fill: #90ee90 !important;
+                stroke: #28a745 !important;
+                stroke-width: 3px !important;
+                animation: pulse 2s ease-in-out infinite;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>trick - active role visualization</h1>
+            <div class="info">
+                This diagram shows current active AWS IAM role.
+            </div>
+            <div class="mermaid">{{.}}</div>
+        </div>
+        <script>
+            mermaid.initialize({ startOnLoad: true, theme: "default" });
+
+            function waitForDiagram() {
+                return new Promise((done) => {
+                    const checkInterval = setInterval(() => {
+                        const svgContainer =
+                            document.querySelector(".mermaid svg");
+                        if (svgContainer) {
+                            clearInterval(checkInterval);
+                            clearTimeout(timeoutId);
+                            console.log(
+                                "diagram ready, starting SSE subscription",
+                            );
+                            done();
+                        }
+                    }, 100);
+
+                    const timeoutId = setTimeout(() => {
+                        clearInterval(checkInterval);
+                        console.log("diagram timeout, starting SSE anyway");
+                        done();
+                    }, 5000);
+                });
+            }
+        </script>
+        <script>
+            (async function () {
+                await waitForDiagram();
+                const eventSource = new EventSource("/events");
+                let previousActiveNode = null;
+
+                eventSource.addEventListener("jump", function (e) {
+                    const lines = e.data.split("\n");
+                    let role = "";
+
+                    lines.forEach((line) => {
+                        if (line.startsWith("role: ")) {
+                            role = line.substring(6);
+                        }
+                    });
+
+                    if (role) {
+                        highlightActiveRole(role);
+                    }
+                });
+
+                function highlightActiveRole(roleArn) {
+                    if (previousActiveNode) {
+                        previousActiveNode.classList.remove("active-role");
+                    }
+
+                    const roleName = extractRoleName(roleArn);
+                    const svgContainer = document.querySelector(".mermaid svg");
+                    if (!svgContainer) {
+                        return;
+                    }
+
+                    const nodes = svgContainer.querySelectorAll("g.node");
+
+                    for (const node of nodes) {
+                        const textElements =
+                            node.querySelectorAll("text, span");
+
+                        textElements.forEach((textEl) => {
+                            const text = textEl.textContent.trim();
+                            if (text === roleName || text.includes(roleName)) {
+                                node.classList.add("active-role");
+                                previousActiveNode = node;
+                                return;
+                            }
+                        });
+                    }
+                }
+
+                function extractRoleName(arn) {
+                    if (arn.includes("/")) {
+                        const parts = arn.split("/");
+                        return parts[parts.length - 1];
+                    }
+                    const parts = arn.split(":");
+                    return parts[parts.length - 1];
+                }
+
+                window.addEventListener("beforeunload", function () {
+                    eventSource.close();
+                });
+            })();
+        </script>
+    </body>
+</html>

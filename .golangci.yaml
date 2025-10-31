@@ -16,7 +16,9 @@ linters:
             - github.com/hashicorp/hcl/v2
             - github.com/hashicorp/hcl/v2/hclparse
             - github.com/hashicorp/hcl/v2/hclsimple
+            - github.com/wakeful/trick/internal/broadcast
             - github.com/wakeful/trick/internal/parser
+            - github.com/wakeful/trick/internal/ui
             - github.com/zclconf/go-cty/cty
     revive:
       rules:

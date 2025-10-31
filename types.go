@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/wakeful/trick/internal/broadcast"
 )
 
 var (
@@ -53,6 +54,8 @@ type App struct {
 	usableRoles map[string]struct{}
 	// sessionDuration is the duration for which assumed role credentials are valid
 	sessionDuration time.Duration
+	// broadcaster is used to publish messages about role changes
+	broadcaster *broadcast.Broadcaster
 }
 
 // NewApp initializes a new App instance for managing AWS role assumptions and profile updates.
@@ -103,6 +106,7 @@ func NewApp(
 		roles:           rolesPool,
 		usableRoles:     hMap,
 		sessionDuration: maxSessionDuration * time.Minute,
+		broadcaster:     broadcast.NewBroadcaster(),
 	}, nil
 }
 

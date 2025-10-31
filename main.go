@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/wakeful/trick/internal/parser"
+	"github.com/wakeful/trick/internal/ui"
 )
 
 const (
@@ -32,6 +33,7 @@ func main() {
 	region := flag.String("region", "eu-west-1", "AWS region used for IAM communication")
 	showVersion := flag.Bool("version", false, "show version")
 	verbose := flag.Bool("verbose", false, "verbose log output")
+	withUI := flag.Bool("ui", false, "starts role visualization on port 8742")
 
 	var (
 		roleVars    StringSlice
@@ -110,6 +112,17 @@ func main() {
 		slog.Error("failed to initialize app", slog.String("error", err.Error()))
 
 		return
+	}
+
+	if *withUI {
+		preRenderedHTML, err := ui.RenderDiagramHTML(roleVars, app.usableRoles, *refresh)
+		if err != nil {
+			slog.Error("failed to render diagram HTML", slog.String("error", err.Error()))
+
+			return
+		}
+
+		go startSSEServer(ctx, app.broadcaster, preRenderedHTML)
 	}
 
 	app.run(ctx, ticker)

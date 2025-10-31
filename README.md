@@ -17,6 +17,8 @@ Usage of trick
         AWS region used for IAM communication (default "eu-west-1")
   -role value
         AWS role to assume (can be specified multiple times)
+  -ui
+        starts role visualization on port 8742
   -use value
         AWS role with meaningful permissions (can be specified multiple times)
   -verbose
@@ -161,3 +163,21 @@ stateDiagram
     rC --> rD: C lacks permission so we jump to D
     rD --> rA: wait 12min and jump
 ```
+
+
+### UI Visualization
+
+The `-ui` flag starts a local web server that visualizes the role chain as an interactive diagram:
+
+```shell
+trick -ui -role arn::42::role-a -role arn::42::role-b -role arn::42::role-c
+```
+Once started, open your browser to `http://127.0.0.1:8742` to see the role chain visualization.
+
+## Acknowledgments
+
+This project would not be possible without the excellent work of:
+
+- **[HCL (HashiCorp Configuration Language)](https://github.com/hashicorp/hcl)** - A powerful and flexible configuration language that makes `trick`'s configuration files intuitive and easy to work with.
+
+- **[Mermaid.js](https://github.com/mermaid-js/mermaid)** - The amazing diagramming and charting tool that powers our role chain visualizations.

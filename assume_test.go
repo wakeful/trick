@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/aws-sdk-go-v2/service/sts/types"
+	"github.com/wakeful/trick/internal/broadcast"
 )
 
 func TestApp_assumeRole(t *testing.T) {
@@ -175,6 +176,7 @@ func TestApp_assumeNextInterestingRole(t *testing.T) {
 				roles:           tt.fields.roles,
 				usableRoles:     tt.fields.usableRoles,
 				sessionDuration: tt.fields.sessionDuration,
+				broadcaster:     broadcast.NewBroadcaster(),
 			}
 
 			_, err := a.assumeNextInterestingRole(t.Context())

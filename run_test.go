@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/aws-sdk-go-v2/service/sts/types"
+	"github.com/wakeful/trick/internal/broadcast"
 )
 
 type MockCmdExecutor struct {
@@ -149,6 +150,7 @@ func TestApp_run(t *testing.T) {
 				region:      "eu-west-1",
 				roles:       pool,
 				usableRoles: make(map[string]struct{}),
+				broadcaster: broadcast.NewBroadcaster(),
 			}
 
 			ctx, cancel := context.WithCancel(t.Context())
