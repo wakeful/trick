@@ -143,7 +143,7 @@ func (e *DefaultCmdExecutor) Execute(
 	name string,
 	arg ...string,
 ) ([]byte, error) {
-	//nolint:wrapcheck
+	//nolint:gosec,wrapcheck
 	return exec.CommandContext(ctx, name, arg...).
 		CombinedOutput()
 }
