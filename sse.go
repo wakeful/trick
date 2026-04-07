@@ -78,7 +78,7 @@ func events(
 		target, unsubscribe := broadcast.Subscribe()
 		defer unsubscribe()
 
-		slog.Debug("SSE client connected", slog.String("client", request.RemoteAddr))
+		slog.Debug("SSE client connected", slog.String("client", request.RemoteAddr)) //nolint:gosec
 
 		notify := request.Context().Done()
 
@@ -94,14 +94,17 @@ func events(
 					f.Flush()
 				}
 
-				slog.Debug(
+				slog.Debug( //nolint:gosec
 					"SSE event delivered",
 					slog.String("client", request.RemoteAddr),
 					slog.String("chain", message.Chain),
 					slog.String("role", message.Role),
 				)
 			case <-notify:
-				slog.Debug("SSE client disconnected", slog.String("client", request.RemoteAddr))
+				slog.Debug( //nolint:gosec
+					"SSE client disconnected",
+					slog.String("client", request.RemoteAddr),
+				)
 
 				return
 			}
