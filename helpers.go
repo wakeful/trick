@@ -66,7 +66,7 @@ func getLogger(output io.Writer, verbose *bool) *slog.Logger {
 	}
 
 	logger := slog.New(
-		slog.NewTextHandler(output, &slog.HandlerOptions{ //nolint:exhaustruct
+		slog.NewTextHandler(output, &slog.HandlerOptions{ //nolint:exhaustruct_v5
 			AddSource: false,
 			Level:     logLevel,
 		}),

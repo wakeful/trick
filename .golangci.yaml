@@ -2,6 +2,7 @@ version: "2"
 linters:
   default: all
   disable:
+    - exhaustruct # deprecated (since v2.13.0)
     - goconst
     - gomodguard # deprecated (since v2.12.0)
     - wsl # deprecated (since v2.2.0)
@@ -32,6 +33,7 @@ linters:
       - linters:
           - err113
           - exhaustruct
+          - exhaustruct_v5
           - funlen
           - goconst
           - varnamelen

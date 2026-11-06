@@ -142,7 +142,7 @@ func decode(fileContent []byte) (*Config, error) {
 		Functions: nil,
 	}
 
-	config := &Config{} //nolint:exhaustruct
+	config := &Config{} //nolint:exhaustruct_v5
 
 	errDecode := hclsimple.Decode("config.hcl", fileContent, ctx, config)
 	if errDecode != nil {

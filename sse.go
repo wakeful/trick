@@ -31,7 +31,7 @@ func startSSEServer(
 
 	const defaultAddr = "127.0.0.1:8742"
 
-	serv := &http.Server{ //nolint:exhaustruct,gosec
+	serv := &http.Server{ //nolint:exhaustruct_v5,gosec
 		Addr:    defaultAddr,
 		Handler: mux,
 	}
